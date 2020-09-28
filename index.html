@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>VTKF Technique Randomizer</title>
+    <style>
+      #root {
+        height: 100vh;
+        width: 100vw;
+      }
+      .controls {
+        float: left;
+        width: 200px;
+        height: 100vh;
+      }
+      .display {
+        width: auto;
+        text-align: center;
+        font-size: 15vh;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root">
+      <div class="controls">
+        <div class="timer">
+          <input id="timerSlider" type="range" min="0.25" step="0.05" max="10" value="3">
+          <div id="timerText"></div>
+        </div>
+        <div class="number-of-moves">
+          <div>Number of moves:</div>
+          <input id="numberOfMoves" value="3" type="number">
+        </div>
+        <div class="play-pause">
+          <div><button id="playButton">Play</button></div>
+          <div><button id="pauseButton">Pause</button></div>
+        </div>
+        <div class="moves" id="movesWrapper">
+          <button id="newMove">+</button>
+        </div>
+      </div>
+      <div class="display">
+        <div id="randomMoves"></div>
+      </div>
+    </div>
+  <script>
+let randomMoves = document.getElementById('randomMoves');
+let playButton = document.getElementById('playButton');
+let pauseButton = document.getElementById('pauseButton');
+let timerSlider = document.getElementById('timerSlider');
+let timerText = document.getElementById('timerText');
+let numberOfMoves = document.getElementById('numberOfMoves');
+let movesWrapper = document.getElementById('movesWrapper');
+let newMoveButton = document.getElementById('newMove');
+let playing = false;
+let lastUpdated = 0;
+let interval;
+let timeout;
+
+let stop = function () {
+  playing = false;
+  clearInterval(interval);
+  clearTimeout(timeout);
+}
+
+let start = function () {
+  stop();
+  playing = true;
+  let duration = timerSlider.value;
+  let timeSinceLastUpdate = Date.now() / 1000 - lastUpdated;
+  let timeToNextUpdate = Math.max(0, duration - timeSinceLastUpdate);
+  timeout = setTimeout(function () {
+    setDisplayToRandomMoves();
+    interval = setInterval(setDisplayToRandomMoves, duration * 1000)
+  }, timeToNextUpdate * 1000);
+}
+
+timerSlider.oninput = function() {
+  timerText.textContent = `${this.value} seconds`;
+  if (playing) {
+    start();
+  }
+}
+timerSlider.oninput();
+
+playButton.onclick = start;
+pauseButton.onclick = stop;
+
+function generateMoves() {
+  const moves = Array.from(
+    movesWrapper.querySelectorAll('.move-name.active')
+  ).map(node => node.value);
+  return Array.from({
+    length: numberOfMoves.value
+  }).map(() => rand(moves));
+}
+
+function setDisplayToRandomMoves() {
+  lastUpdated = Date.now() / 1000;
+  let moves = generateMoves();
+  if (moves.length !== randomMoves.childElementCount) {
+    randomMoves.innerHTML = '';
+    moves.forEach(m => {
+      const node = document.createElement('div');
+      node.textContent = m;
+      randomMoves.appendChild(node);
+    });
+  } else {
+    const children = randomMoves.children;
+    moves.forEach((m, idx) => {
+      children[idx].textContent = m;
+    });
+  }
+}
+
+function rand(items) {
+  return items[items.length * Math.random() | 0];
+}
+
+function newMove(moveName) {
+  const toggle = document.createElement('input');
+  toggle.setAttribute('type', 'checkbox');
+  toggle.checked = false;
+
+  const name = document.createElement('input');
+  name.setAttribute('type', 'input');
+  name.classList.add('move-name');
+  toggle.onclick = () => {
+    name.classList.toggle('active');
+  }
+  if (typeof moveName !== 'undefined') {
+    name.value = moveName;
+    toggle.click();
+  }
+
+  const deleteMove = document.createElement('button');
+  deleteMove.textContent = 'x';
+
+  const wrapper = document.createElement('div');
+  wrapper.appendChild(toggle);
+  wrapper.appendChild(name);
+  wrapper.appendChild(deleteMove);
+  deleteMove.onclick = () => wrapper.remove();
+  return movesWrapper.insertBefore(wrapper, newMoveButton);
+}
+newMoveButton.onclick = function () {
+  const wrapper = newMove();
+  const inputField = wrapper.querySelector('.move-name');
+  inputField.focus();
+};
+
+[
+  'pak da',
+  'lap da',
+  'tan da',
+  'jut da',
+  'huen da',
+  'gan da',
+  'gum da',
+  'poi jong da',
+].forEach(newMove);
+  </script>
+  </body>
+</html>
